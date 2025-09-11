@@ -2,6 +2,7 @@ import requests
 import json
 import sys
 import os
+import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def get_bedrock_response(prompt, model_name, config):
@@ -38,13 +39,34 @@ def get_bedrock_response(prompt, model_name, config):
         }
     }
     
-    response = requests.post(url, headers=headers, json=body)
+    max_retries = 5
+    base_delay = 1
     
-    if response.status_code != 200:
-        raise Exception(f"Bedrock API error: {response.status_code} - {response.text}")
+    for attempt in range(max_retries):
+        response = requests.post(url, headers=headers, json=body)
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            return response_data['output']['message']['content'][0]['text']
+        
+        # Handle rate limits and API errors
+        elif response.status_code == 429:  # Rate limited
+            print(f"Rate limit hit: {response.status_code} - {response.text}")
+            raise Exception("RATE_LIMIT_EXCEEDED")
+            
+        elif response.status_code >= 500:  # Server errors
+            if attempt == max_retries - 1:
+                raise Exception(f"Server error: {response.status_code} - {response.text}")
+            
+            delay = base_delay * (2 ** attempt)
+            print(f"Server error: {response.status_code}. Waiting {delay} seconds before retry {attempt + 1}/{max_retries}...")
+            time.sleep(delay)
+            
+        else:
+            # Client errors (400, 401, etc.) - don't retry
+            raise Exception(f"Bedrock API error: {response.status_code} - {response.text}")
     
-    response_data = response.json()
-    return response_data['output']['message']['content'][0]['text']
+    raise Exception(f"Failed after {max_retries} attempts")
 
 if __name__ == "__main__":
     # Simple hardcoded config for testing
