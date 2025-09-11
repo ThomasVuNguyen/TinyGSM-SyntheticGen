@@ -3,6 +3,7 @@ import json
 import os
 import time
 from utils.azure_ai import get_azure_response
+from utils.rockbed import get_bedrock_response
 from data.data_loader import load_tinygsm_questions
 from data.data_utils import save_dataset, upload_to_huggingface, append_to_dataset
 
@@ -16,7 +17,12 @@ def generate_solutions(questions, config, output_path):
         print(f"Processing {i+1}/{total_questions}: {question[:50]}...")
         
         prompt = f"{question}\n\n{config['prompt']}"
-        solution = get_azure_response(prompt, config['deployment'], config)
+        
+        # Determine which API to use based on config
+        if 'bedrock_models' in config:
+            solution = get_bedrock_response(prompt, config['deployment'], config)
+        else:
+            solution = get_azure_response(prompt, config['deployment'], config)
         
         iteration_time = time.time() - iteration_start
         times.append(iteration_time)

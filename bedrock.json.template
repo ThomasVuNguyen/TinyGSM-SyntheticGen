@@ -1,0 +1,18 @@
+{
+  "bedrock_models": {
+    "nova-pro": {
+      "model_id": "amazon.nova-pro-v1:0",
+      "api_key": "your_bedrock_api_key_here",
+      "region": "us-east-1",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    }
+  },
+  "deployment": "nova-pro",
+  "limit": null,
+  "output_file": "TinyGSM-nova-pro.json",
+  "upload_to_hf": false,
+  "hf_repo": "your-username/TinyGSM-nova-pro",
+  "dataset_name": "TinyGSM-nova-pro",
+  "prompt": "Generate a simple math word problem with Python code solution in this exact format:\n\n[Problem description]\ndef simple_math_problem() -> int:\n\"\"\"\n[Same problem description]\n\"\"\"\n[Variable assignments]\n[Calculation]\nresult = [final calculation]\n\nreturn result\n\nExample:\nMark has 10 crayons. He gives 2 crayons to his younger sister and loses another 4 while he was playing. How many crayons does Mark have left?\ndef simple_math_problem() -> int:\n\"\"\"\nMark has 10 crayons.\nHe gives 2 crayons to his younger sister and loses another 4 while he was playing.\nHow many crayons does Mark have left?\n\"\"\"\ncrayonsTotal = 10\ncrayonsGiven = 2\ncrayonsLost = 4\ncrayonsLeft = crayonsTotal - crayonsGiven - crayonsLost\nresult = crayonsLeft\n\nreturn result\n\nGenerate a new, different math problem following this exact format."
+}

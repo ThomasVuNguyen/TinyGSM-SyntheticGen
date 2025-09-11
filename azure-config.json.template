@@ -3,7 +3,7 @@
     "gpt4o-deployment": {
       "model": "gpt-4o",
       "endpoint": "https://azure-ai-something.openai.azure.com/openai/deployments/gpt-4.1/chat/completions?api-version=2025-01-01-preview",
-      "api_key": "1306"
+      "api_key": "13062000"
     }
   },
   "deployment": "gpt4o-deployment",
