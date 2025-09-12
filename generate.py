@@ -4,6 +4,7 @@ import os
 import time
 from utils.azure_ai import get_azure_response, get_azure_responses_batch, get_azure_responses_parallel
 from utils.rockbed import get_bedrock_response, get_bedrock_responses_parallel
+from utils.localgen import get_ollama_response, get_ollama_responses_parallel
 from data.data_loader import load_tinygsm_questions
 from data.data_utils import save_dataset, upload_to_huggingface, append_to_dataset, get_processed_count, get_processed_questions
 
@@ -27,8 +28,8 @@ def generate_solutions(questions, config, output_path, batch_size=10, use_batch=
     times = []
     
     try:
-        if use_batch and ('azure_deployments' in config or 'bedrock_models' in config):
-            # Use batch processing for Azure or Bedrock
+        if use_batch and ('azure_deployments' in config or 'bedrock_models' in config or 'ollama_models' in config):
+            # Use batch processing for Azure, Bedrock, or Ollama
             print(f"Using batch processing with batch size {batch_size}")
             return generate_solutions_batch(remaining_questions, config, output_path, processed_count, batch_size, config_file)
         else:
@@ -83,6 +84,11 @@ def generate_solutions_batch(questions, config, output_path, processed_count, ba
             batch_config = config.get('batch_processing', {})
             max_workers = batch_config.get('max_workers', 3)
             responses = get_bedrock_responses_parallel(prompts, config_file, max_workers)
+        elif 'ollama_models' in config:
+            # Use parallel processing for Ollama
+            batch_config = config.get('batch_processing', {})
+            max_workers = batch_config.get('max_workers', 3)
+            responses = get_ollama_responses_parallel(prompts, config_file, max_workers)
         else:
             # Fallback to sequential for other APIs
             responses = []
@@ -135,6 +141,8 @@ def generate_solutions_sequential(questions, config, output_path, processed_coun
         # Determine which API to use based on config
         if 'bedrock_models' in config:
             solution = get_bedrock_response(prompt, config_file)
+        elif 'ollama_models' in config:
+            solution = get_ollama_response(prompt, config_file)
         else:
             solution = get_azure_response(prompt, config['deployment'], config)
         
