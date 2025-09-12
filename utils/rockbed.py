@@ -1,65 +1,58 @@
-import boto3
-import json
-import sys
 import os
-import time
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import json
+from litellm import completion
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-def get_bedrock_response(prompt, model_name, config):
-    model_config = config['bedrock_models'][model_name]
+def get_bedrock_response(prompt, config_file="bedrock-llama33-70b.json"):
+    # Load config file
+    with open(config_file, 'r') as f:
+        config = json.load(f)
     
-    # Initialize Bedrock client
-    region = model_config["region"]
-    model_id = model_config["model_id"]
+    # Get model config
+    model_config = config['bedrock_models'][config['deployment']]
     
-    bedrock_client = boto3.client('bedrock-runtime', region_name=region)
+    # Set AWS credentials and region from config
+    os.environ["AWS_ACCESS_KEY_ID"] = model_config["aws_access_key_id"]
+    os.environ["AWS_SECRET_ACCESS_KEY"] = model_config["aws_secret_access_key"]
+    os.environ["AWS_REGION_NAME"] = model_config["region"]
     
-    # Prepare the request body for Nova Pro
-    body = {
-        "messages": [
-            {
-                "role": "user", 
-                "content": [
-                    {
-                        "text": prompt
-                    }
-                ]
-            }
-        ],
-        "inferenceConfig": {
-            "temperature": model_config.get("temperature", 0.7),
-            "maxTokens": model_config.get("max_tokens", 2000)
+    # Use model ID from config
+    model_id = f"bedrock/{model_config['model_id']}"
+    
+    response = completion(
+        model=model_id,
+        messages=[{ "content": prompt, "role": "user"}]
+    )
+    return response.choices[0].message.content
+
+def get_bedrock_responses_parallel(prompts, config_file="bedrock-llama33-70b.json", max_workers=3):
+    """Process multiple prompts in parallel for faster batch processing."""
+    responses = [None] * len(prompts)
+    
+    def process_single_prompt(index, prompt):
+        try:
+            response = get_bedrock_response(prompt, config_file)
+            return index, response
+        except Exception as e:
+            print(f"Error processing prompt {index}: {e}")
+            return index, None
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all tasks
+        future_to_index = {
+            executor.submit(process_single_prompt, i, prompt): i 
+            for i, prompt in enumerate(prompts)
         }
-    }
+        
+        # Collect results as they complete
+        for future in as_completed(future_to_index):
+            index, response = future.result()
+            responses[index] = response
     
-    try:
-        response = bedrock_client.invoke_model(
-            modelId=model_id,
-            body=json.dumps(body),
-            contentType="application/json"
-        )
-        
-        response_body = json.loads(response['body'].read())
-        return response_body['output']['message']['content'][0]['text']
-        
-    except Exception as e:
-        raise Exception(f"Bedrock API error: {str(e)}")
+    return responses
 
 if __name__ == "__main__":
-    # Simple hardcoded config for testing
-    test_config = {
-        "bedrock_models": {
-            "nova-pro": {
-                "model_id": "amazon.nova-pro-v1:0",
-                "region": "us-east-1",
-                "max_tokens": 2000,
-                "temperature": 0.7
-            }
-        },
-        "deployment": "nova-pro"
-    }
-    
-    print("Chat with Nova Pro! Type 'quit' to exit.\n")
+    print("Chat with Llama 3.3 70B! Type 'quit' to exit.\n")
     
     while True:
         user_input = input("You: ")
@@ -67,7 +60,7 @@ if __name__ == "__main__":
             break
             
         try:
-            response = get_bedrock_response(user_input, "nova-pro", test_config)
+            response = get_bedrock_response(user_input)
             print(f"Bot: {response}\n")
         except Exception as e:
             print(f"Error: {e}\n")

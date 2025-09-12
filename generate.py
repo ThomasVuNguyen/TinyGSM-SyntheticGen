@@ -3,11 +3,11 @@ import json
 import os
 import time
 from utils.azure_ai import get_azure_response, get_azure_responses_batch, get_azure_responses_parallel
-from utils.rockbed import get_bedrock_response
+from utils.rockbed import get_bedrock_response, get_bedrock_responses_parallel
 from data.data_loader import load_tinygsm_questions
 from data.data_utils import save_dataset, upload_to_huggingface, append_to_dataset, get_processed_count, get_processed_questions
 
-def generate_solutions(questions, config, output_path, batch_size=10, use_batch=True):
+def generate_solutions(questions, config, output_path, batch_size=10, use_batch=True, config_file=None):
     # Check for existing progress
     already_processed = get_processed_questions(output_path)
     processed_count = len(already_processed)
@@ -27,13 +27,13 @@ def generate_solutions(questions, config, output_path, batch_size=10, use_batch=
     times = []
     
     try:
-        if use_batch and 'azure_deployments' in config:
-            # Use batch processing for Azure
+        if use_batch and ('azure_deployments' in config or 'bedrock_models' in config):
+            # Use batch processing for Azure or Bedrock
             print(f"Using batch processing with batch size {batch_size}")
-            return generate_solutions_batch(remaining_questions, config, output_path, processed_count, batch_size)
+            return generate_solutions_batch(remaining_questions, config, output_path, processed_count, batch_size, config_file)
         else:
             # Use sequential processing
-            return generate_solutions_sequential(remaining_questions, config, output_path, processed_count)
+            return generate_solutions_sequential(remaining_questions, config, output_path, processed_count, config_file)
     
     except Exception as e:
         if "RATE_LIMIT_EXCEEDED" in str(e):
@@ -53,7 +53,7 @@ def generate_solutions(questions, config, output_path, batch_size=10, use_batch=
         else:
             raise e
 
-def generate_solutions_batch(questions, config, output_path, processed_count, batch_size=10):
+def generate_solutions_batch(questions, config, output_path, processed_count, batch_size=10, config_file=None):
     """Generate solutions using batch processing for faster inference."""
     total_questions = len(questions)
     times = []
@@ -72,20 +72,22 @@ def generate_solutions_batch(questions, config, output_path, processed_count, ba
         
         # Get batch responses
         if 'azure_deployments' in config:
-            # Get max_workers from config if available
+            # Use Azure batch API
             batch_config = config.get('batch_processing', {})
             max_workers = batch_config.get('max_workers', 5)
             responses = get_azure_responses_batch(prompts, config['deployment'], config, 
                                                batch_size=len(batch_questions), 
                                                max_workers=max_workers)
+        elif 'bedrock_models' in config:
+            # Use parallel processing for Bedrock
+            batch_config = config.get('batch_processing', {})
+            max_workers = batch_config.get('max_workers', 3)
+            responses = get_bedrock_responses_parallel(prompts, config_file, max_workers)
         else:
-            # Fallback to sequential for non-Azure APIs
+            # Fallback to sequential for other APIs
             responses = []
             for prompt in prompts:
-                if 'bedrock_models' in config:
-                    response = get_bedrock_response(prompt, config['deployment'], config)
-                else:
-                    response = get_azure_response(prompt, config['deployment'], config)
+                response = get_azure_response(prompt, config['deployment'], config)
                 responses.append(response)
         
         # Save each solution in the batch
@@ -118,7 +120,7 @@ def generate_solutions_batch(questions, config, output_path, processed_count, ba
     
     return get_processed_count(output_path)
 
-def generate_solutions_sequential(questions, config, output_path, processed_count):
+def generate_solutions_sequential(questions, config, output_path, processed_count, config_file=None):
     """Generate solutions using sequential processing (original method)."""
     total_questions = len(questions)
     times = []
@@ -132,7 +134,7 @@ def generate_solutions_sequential(questions, config, output_path, processed_coun
         
         # Determine which API to use based on config
         if 'bedrock_models' in config:
-            solution = get_bedrock_response(prompt, config['deployment'], config)
+            solution = get_bedrock_response(prompt, config_file)
         else:
             solution = get_azure_response(prompt, config['deployment'], config)
         
@@ -184,8 +186,9 @@ def main():
     print("Loading questions from dataset...")
     # Use config limit as default, command line can override
     limit = args.limit if args.limit is not None else config.get('limit')
-    questions = load_tinygsm_questions(limit=limit)
-    print(f"Loaded {len(questions)} questions")
+    start_row = config.get('start_row', 0)
+    questions = load_tinygsm_questions(limit=limit, start_row=start_row)
+    print(f"Loaded {len(questions)} questions starting from row {start_row}")
     
     # Create output directory if it doesn't exist
     os.makedirs('output', exist_ok=True)
@@ -206,7 +209,8 @@ def main():
     
     total_count = generate_solutions(questions, config, output_path, 
                                    batch_size=batch_size, 
-                                   use_batch=use_batch)
+                                   use_batch=use_batch,
+                                   config_file=args.config_file)
     print(f"Completed! Saved {total_count} examples to {output_path}")
     
     if config.get('upload_to_hf', False):

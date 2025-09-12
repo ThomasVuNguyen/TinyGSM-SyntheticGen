@@ -3,7 +3,7 @@ import os
 import pickle
 import hashlib
 
-def load_tinygsm_questions(split='train', limit=None):
+def load_tinygsm_questions(split='train', limit=None, start_row=0):
     print("Attempting to load TinyGSM dataset...")
     
     # Set minimal logging for datasets
@@ -14,7 +14,7 @@ def load_tinygsm_questions(split='train', limit=None):
     os.makedirs(cache_dir, exist_ok=True)
     
     # Generate cache key based on parameters
-    cache_key = hashlib.md5(f"tinygsm_{split}_{limit}".encode()).hexdigest()
+    cache_key = hashlib.md5(f"tinygsm_{split}_{limit}_{start_row}".encode()).hexdigest()
     cache_file = os.path.join(cache_dir, f"tinygsm_cache_{cache_key}.pkl")
     
     # Try to load from cache first
@@ -29,7 +29,7 @@ def load_tinygsm_questions(split='train', limit=None):
             print(f"Cache load failed: {e}, falling back to dataset loading")
     
     # Load from dataset
-    questions = _load_from_dataset(split, limit)
+    questions = _load_from_dataset(split, limit, start_row)
     
     # Save to cache
     try:
@@ -41,10 +41,14 @@ def load_tinygsm_questions(split='train', limit=None):
     
     return questions
 
-def _load_from_dataset(split='train', limit=None):
+def _load_from_dataset(split='train', limit=None, start_row=0):
     try:
         print("Trying optimized streaming approach...")
         dataset = load_dataset("TinyGSM/TinyGSM", split=split, streaming=True)
+        
+        # Skip rows if start_row > 0
+        if start_row > 0:
+            dataset = dataset.skip(start_row)
         
         # Use take() method for efficient limiting
         if limit:
@@ -52,7 +56,7 @@ def _load_from_dataset(split='train', limit=None):
         
         # Convert to list efficiently
         questions = []
-        print("Streaming dataset loaded, processing rows...")
+        print(f"Streaming dataset loaded, processing rows starting from {start_row}...")
         
         # Process in batches for better performance
         batch_size = 1000
@@ -93,9 +97,14 @@ def _load_from_dataset(split='train', limit=None):
             
     if column_name:
         questions = [row[column_name] for row in dataset]
+        
+        # Apply start_row and limit
+        if start_row > 0:
+            questions = questions[start_row:]
         if limit:
             questions = questions[:limit]
-        print(f"Successfully loaded {len(questions)} questions")
+            
+        print(f"Successfully loaded {len(questions)} questions starting from row {start_row}")
         return questions
     
     raise ValueError("Could not find question column in dataset")
