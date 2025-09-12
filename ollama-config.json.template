@@ -1,0 +1,29 @@
+{
+  "ollama_models": {
+    "llama3.1-8b": {
+      "model_name": "llama3.1:8b",
+      "base_url": "http://localhost:11434",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    },
+    "llama3.1-70b": {
+      "model_name": "llama3.1:70b",
+      "base_url": "http://localhost:11434",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    },
+    "codellama": {
+      "model_name": "codellama:7b",
+      "base_url": "http://localhost:11434",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    }
+  },
+  "deployment": "llama3.1-8b",
+  "limit": null,
+  "output_file": "TinyGSM-ollama.json",
+  "upload_to_hf": false,
+  "hf_repo": "ThomasTheMaker/TinyGSM-ollama",
+  "dataset_name": "TinyGSM-ollama",
+  "prompt": "Solve this EXACT problem with Python code in this format:\n\ndef simple_math_problem() -> float:\n\"\"\"\n[Copy the EXACT problem statement word-for-word]\n\"\"\"\n[Variable assignments with descriptive names]\n[Calculate step by step]\nresult = [final calculation]\n\nreturn result\n\nExample - if the problem was:\n\"Mark has 10 crayons. He gives 2 crayons to his younger sister and loses another 4 while he was playing. How many crayons does Mark have left?\"\n\nThen the solution would be:\ndef simple_math_problem() -> int:\n\"\"\"\nMark has 10 crayons. He gives 2 crayons to his younger sister and loses another 4 while he was playing. How many crayons does Mark have left?\n\"\"\"\ncrayonsTotal = 10\ncrayonsGiven = 2\ncrayonsLost = 4\ncrayonsLeft = crayonsTotal - crayonsGiven - crayonsLost\nresult = crayonsLeft\n\nreturn result\n\nSolve the EXACT problem given above, do not create a new problem:"
+}
