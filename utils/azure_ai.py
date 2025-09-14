@@ -11,21 +11,36 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def get_azure_response(prompt, deployment_name, config):
     deployment = config['azure_deployments'][deployment_name]
     
+    # Extract API version from endpoint or use default
+    api_version = "2024-02-01"  # default
+    if "api-version=" in deployment["endpoint"]:
+        try:
+            api_version = deployment["endpoint"].split("api-version=")[1].split("&")[0]
+        except:
+            pass  # use default if parsing fails
+    
     client = openai.AzureOpenAI(
         api_key=deployment["api_key"],
-        api_version="2024-02-01",
+        api_version=api_version,
         azure_endpoint=deployment["endpoint"]
     )
     
     max_retries = 5
     base_delay = 1
     
+    # Prepare request parameters
+    request_params = {
+        "model": deployment["model"],
+        "messages": [{"role": "user", "content": prompt}]
+    }
+    
+    # Add reasoning parameters for o4-mini model
+    if "o4-mini" in deployment["model"] and "2025-04-01-preview" in api_version:
+        request_params["reasoning_effort"] = "high"
+    
     for attempt in range(max_retries):
         try:
-            response = client.chat.completions.create(
-                model=deployment["model"],
-                messages=[{"role": "user", "content": prompt}]
-            )
+            response = client.chat.completions.create(**request_params)
             return response.choices[0].message.content
             
         except openai.RateLimitError as e:
@@ -114,6 +129,10 @@ async def get_azure_responses_async(prompts, deployment_name, config, max_concur
                 "messages": [{"role": "user", "content": prompt}],
                 "model": deployment["model"]
             }
+            
+            # Add reasoning parameters for o4-mini model
+            if "o4-mini" in deployment["model"] and "2025-04-01-preview" in deployment["endpoint"]:
+                data["reasoning_effort"] = "high"
             
             async with session.post(
                 deployment["endpoint"],
