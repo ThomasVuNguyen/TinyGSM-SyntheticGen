@@ -1,0 +1,7 @@
+# Core dependencies for TinyGSM-SyntheticGen
+openai>=1.0.0
+datasets>=4.0.0
+huggingface_hub>=0.34.0
+boto3>=1.40.0
+litellm>=1.77.0
+tqdm>=4.67.0

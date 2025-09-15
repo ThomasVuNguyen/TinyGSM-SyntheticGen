@@ -8,22 +8,37 @@ import aiohttp
 from concurrent.futures import ThreadPoolExecutor, as_completed
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+def _is_rift_endpoint(endpoint):
+    """Check if the endpoint is a Rift API endpoint"""
+    return "cloudrift.ai" in endpoint or "rift" in endpoint.lower()
+
+def _create_client(deployment):
+    """Create appropriate OpenAI client based on endpoint type"""
+    if _is_rift_endpoint(deployment["endpoint"]):
+        # Use standard OpenAI client for Rift
+        return openai.OpenAI(
+            api_key=deployment["api_key"],
+            base_url=deployment["endpoint"]
+        )
+    else:
+        # Use Azure OpenAI client for Azure endpoints
+        api_version = "2024-02-01"  # default
+        if "api-version=" in deployment["endpoint"]:
+            try:
+                api_version = deployment["endpoint"].split("api-version=")[1].split("&")[0]
+            except:
+                pass  # use default if parsing fails
+        
+        return openai.AzureOpenAI(
+            api_key=deployment["api_key"],
+            api_version=api_version,
+            azure_endpoint=deployment["endpoint"]
+        )
+
 def get_azure_response(prompt, deployment_name, config):
     deployment = config['azure_deployments'][deployment_name]
     
-    # Extract API version from endpoint or use default
-    api_version = "2024-02-01"  # default
-    if "api-version=" in deployment["endpoint"]:
-        try:
-            api_version = deployment["endpoint"].split("api-version=")[1].split("&")[0]
-        except:
-            pass  # use default if parsing fails
-    
-    client = openai.AzureOpenAI(
-        api_key=deployment["api_key"],
-        api_version=api_version,
-        azure_endpoint=deployment["endpoint"]
-    )
+    client = _create_client(deployment)
     
     max_retries = 5
     base_delay = 1
@@ -120,22 +135,32 @@ async def get_azure_responses_async(prompts, deployment_name, config, max_concur
     
     async def process_single_prompt_async(session, prompt, index):
         try:
-            headers = {
-                "api-key": deployment["api_key"],
-                "Content-Type": "application/json"
-            }
+            # Determine headers based on endpoint type
+            if _is_rift_endpoint(deployment["endpoint"]):
+                headers = {
+                    "Authorization": f"Bearer {deployment['api_key']}",
+                    "Content-Type": "application/json"
+                }
+                # For Rift, use the base URL + /chat/completions
+                url = deployment["endpoint"].rstrip('/') + "/chat/completions"
+            else:
+                headers = {
+                    "api-key": deployment["api_key"],
+                    "Content-Type": "application/json"
+                }
+                url = deployment["endpoint"]
             
             data = {
                 "messages": [{"role": "user", "content": prompt}],
                 "model": deployment["model"]
             }
             
-            # Add reasoning parameters for o4-mini model
-            if "o4-mini" in deployment["model"] and "2025-04-01-preview" in deployment["endpoint"]:
+            # Add reasoning parameters for o4-mini model (Azure only)
+            if not _is_rift_endpoint(deployment["endpoint"]) and "o4-mini" in deployment["model"] and "2025-04-01-preview" in deployment["endpoint"]:
                 data["reasoning_effort"] = "high"
             
             async with session.post(
-                deployment["endpoint"],
+                url,
                 headers=headers,
                 json=data
             ) as response:
