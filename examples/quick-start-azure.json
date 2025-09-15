@@ -1,0 +1,14 @@
+{
+  "azure_deployments": {
+    "gpt4o-mini": {
+      "model": "gpt-4o-mini",
+      "endpoint": "https://your-resource.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-01",
+      "api_key": "your-azure-openai-api-key"
+    }
+  },
+  "deployment": "gpt4o-mini",
+  "limit": 10,
+  "output_file": "tinygsm-quick-test.json",
+  "upload_to_hf": false,
+  "prompt": "Solve this math problem step by step and provide the final answer."
+}

@@ -1,0 +1,15 @@
+{
+  "bedrock_models": {
+    "claude-3-5-sonnet": {
+      "model_id": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+      "aws_access_key_id": "your-aws-access-key-id",
+      "aws_secret_access_key": "your-aws-secret-access-key",
+      "region": "us-east-1"
+    }
+  },
+  "deployment": "claude-3-5-sonnet",
+  "limit": 10,
+  "output_file": "tinygsm-quick-test.json",
+  "upload_to_hf": false,
+  "prompt": "Solve this math problem step by step and provide the final answer."
+}

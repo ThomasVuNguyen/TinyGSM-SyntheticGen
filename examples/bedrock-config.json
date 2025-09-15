@@ -1,0 +1,49 @@
+{
+  "bedrock_models": {
+    "nova-pro": {
+      "model_id": "amazon.nova-pro-v1:0",
+      "aws_access_key_id": "your-aws-access-key-id",
+      "aws_secret_access_key": "your-aws-secret-access-key",
+      "region": "us-east-1",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    },
+    "claude-3-5-sonnet": {
+      "model_id": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+      "aws_access_key_id": "your-aws-access-key-id",
+      "aws_secret_access_key": "your-aws-secret-access-key",
+      "region": "us-east-1",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    },
+    "llama3-1-70b": {
+      "model_id": "meta.llama3-1-70b-instruct-v1:0",
+      "aws_access_key_id": "your-aws-access-key-id",
+      "aws_secret_access_key": "your-aws-secret-access-key",
+      "region": "us-east-1",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    },
+    "mixtral-8x7b": {
+      "model_id": "mistral.mixtral-8x7b-instruct-v0:1",
+      "aws_access_key_id": "your-aws-access-key-id",
+      "aws_secret_access_key": "your-aws-secret-access-key",
+      "region": "us-east-1",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    }
+  },
+  "deployment": "nova-pro",
+  "limit": 100,
+  "start_row": 0,
+  "output_file": "tinygsm-bedrock-nova-pro.json",
+  "upload_to_hf": false,
+  "hf_repo": "your-username/tinygsm-bedrock-nova-pro",
+  "dataset_name": "TinyGSM-Bedrock-NovaPro",
+  "batch_processing": {
+    "enabled": true,
+    "batch_size": 10,
+    "max_workers": 3
+  },
+  "prompt": "Solve this EXACT problem with Python code in this format:\n\ndef simple_math_problem() -> float:\n\"\"\"\n[Copy the EXACT problem statement word-for-word]\n\"\"\"\n[Variable assignments with descriptive names]\n[Calculate step by step]\nresult = [final calculation]\n\nreturn result\n\nExample - if the problem was:\n\"Mark has 10 crayons. He gives 2 crayons to his younger sister and loses another 4 while he was playing. How many crayons does Mark have left?\"\n\nThen the solution would be:\ndef simple_math_problem() -> int:\n\"\"\"\nMark has 10 crayons. He gives 2 crayons to his younger sister and loses another 4 while he was playing. How many crayons does Mark have left?\n\"\"\"\ncrayonsTotal = 10\ncrayonsGiven = 2\ncrayonsLost = 4\ncrayonsLeft = crayonsTotal - crayonsGiven - crayonsLost\nresult = crayonsLeft\n\nreturn result\n\nSolve the EXACT problem given above, do not create a new problem:"
+}

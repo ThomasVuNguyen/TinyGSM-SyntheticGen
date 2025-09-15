@@ -1,0 +1,47 @@
+{
+  "ollama_models": {
+    "llama3.1-8b": {
+      "model_name": "llama3.1:8b",
+      "base_url": "http://localhost:11434",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    },
+    "llama3.1-70b": {
+      "model_name": "llama3.1:70b",
+      "base_url": "http://localhost:11434",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    },
+    "codellama": {
+      "model_name": "codellama:7b",
+      "base_url": "http://localhost:11434",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    },
+    "mistral": {
+      "model_name": "mistral:7b",
+      "base_url": "http://localhost:11434",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    },
+    "qwen": {
+      "model_name": "qwen:7b",
+      "base_url": "http://localhost:11434",
+      "max_tokens": 2000,
+      "temperature": 0.7
+    }
+  },
+  "deployment": "llama3.1-8b",
+  "limit": 100,
+  "start_row": 0,
+  "output_file": "tinygsm-ollama-llama3.1-8b.json",
+  "upload_to_hf": false,
+  "hf_repo": "your-username/tinygsm-ollama-llama3.1-8b",
+  "dataset_name": "TinyGSM-Ollama-Llama3.1-8B",
+  "batch_processing": {
+    "enabled": true,
+    "batch_size": 10,
+    "max_workers": 3
+  },
+  "prompt": "Solve this EXACT problem with Python code in this format:\n\ndef simple_math_problem() -> float:\n\"\"\"\n[Copy the EXACT problem statement word-for-word]\n\"\"\"\n[Variable assignments with descriptive names]\n[Calculate step by step]\nresult = [final calculation]\n\nreturn result\n\nExample - if the problem was:\n\"Mark has 10 crayons. He gives 2 crayons to his younger sister and loses another 4 while he was playing. How many crayons does Mark have left?\"\n\nThen the solution would be:\ndef simple_math_problem() -> int:\n\"\"\"\nMark has 10 crayons. He gives 2 crayons to his younger sister and loses another 4 while he was playing. How many crayons does Mark have left?\n\"\"\"\ncrayonsTotal = 10\ncrayonsGiven = 2\ncrayonsLost = 4\ncrayonsLeft = crayonsTotal - crayonsGiven - crayonsLost\nresult = crayonsLeft\n\nreturn result\n\nSolve the EXACT problem given above, do not create a new problem:"
+}

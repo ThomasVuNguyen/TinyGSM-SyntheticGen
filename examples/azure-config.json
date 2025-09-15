@@ -1,0 +1,32 @@
+{
+  "azure_deployments": {
+    "gpt4o-deployment": {
+      "model": "gpt-4o",
+      "endpoint": "https://your-resource.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-01",
+      "api_key": "your-azure-openai-api-key"
+    },
+    "gpt4o-mini-deployment": {
+      "model": "gpt-4o-mini",
+      "endpoint": "https://your-resource.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-01",
+      "api_key": "your-azure-openai-api-key"
+    },
+    "gpt35-turbo-deployment": {
+      "model": "gpt-35-turbo",
+      "endpoint": "https://your-resource.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions?api-version=2024-02-01",
+      "api_key": "your-azure-openai-api-key"
+    }
+  },
+  "deployment": "gpt4o-deployment",
+  "limit": 100,
+  "start_row": 0,
+  "output_file": "tinygsm-azure-gpt4o.json",
+  "upload_to_hf": false,
+  "hf_repo": "your-username/tinygsm-azure-gpt4o",
+  "dataset_name": "TinyGSM-Azure-GPT4o",
+  "batch_processing": {
+    "enabled": true,
+    "batch_size": 10,
+    "max_workers": 5
+  },
+  "prompt": "Solve this EXACT problem with Python code in this format:\n\ndef simple_math_problem() -> float:\n\"\"\"\n[Copy the EXACT problem statement word-for-word]\n\"\"\"\n[Variable assignments with descriptive names]\n[Calculate step by step]\nresult = [final calculation]\n\nreturn result\n\nExample - if the problem was:\n\"Mark has 10 crayons. He gives 2 crayons to his younger sister and loses another 4 while he was playing. How many crayons does Mark have left?\"\n\nThen the solution would be:\ndef simple_math_problem() -> int:\n\"\"\"\nMark has 10 crayons. He gives 2 crayons to his younger sister and loses another 4 while he was playing. How many crayons does Mark have left?\n\"\"\"\ncrayonsTotal = 10\ncrayonsGiven = 2\ncrayonsLost = 4\ncrayonsLeft = crayonsTotal - crayonsGiven - crayonsLost\nresult = crayonsLeft\n\nreturn result\n\nSolve the EXACT problem given above, do not create a new problem:"
+}
